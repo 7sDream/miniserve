@@ -265,9 +265,6 @@ pub fn directory_listing(
             let entry = entry?;
             // show file url as relative to static path
             let file_name = entry.file_name().to_string_lossy().to_string();
-            if !matches_search(&file_name) {
-                continue;
-            }
             let (is_symlink, metadata) = match entry.metadata() {
                 Ok(metadata) if metadata.file_type().is_symlink() => {
                     // for symlinks, get the metadata of the original file
@@ -292,6 +289,9 @@ pub fn directory_listing(
                 let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
+                    if !matches_search(&file_name) {
+                        continue;
+                    }
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
@@ -329,14 +329,6 @@ pub fn directory_listing(
                         }
                         None => file_url,
                     };
-                    entries.push(Entry::new(
-                        file_name.clone(),
-                        EntryType::File,
-                        file_link,
-                        Some(ByteSize::b(metadata.len())),
-                        last_modification_date,
-                        symlink_dest,
-                    ));
                     if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
                         let ext = file_name.split('.').next_back().unwrap().to_lowercase();
                         readme = Some((
@@ -351,6 +343,17 @@ pub fn directory_listing(
                             },
                         ));
                     }
+                    if !matches_search(&file_name) {
+                        continue;
+                    }
+                    entries.push(Entry::new(
+                        file_name.clone(),
+                        EntryType::File,
+                        file_link,
+                        Some(ByteSize::b(metadata.len())),
+                        last_modification_date,
+                        symlink_dest,
+                    ));
                 }
             } else {
                 continue;
