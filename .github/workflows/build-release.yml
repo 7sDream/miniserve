@@ -196,7 +196,7 @@ jobs:
       - name: podman manifest push latest to docker.io
         run: |
           podman manifest push miniserve docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:latest
-          podman manifest push miniserve docker.io/${{ github.repository_owner }}/miniserve-with-search:latest
+          podman manifest push miniserve ghcr.io/${{ github.repository_owner }}/miniserve-with-search:latest
 
       - name: podman manifest push tag version to docker.io
         run: |
@@ -216,7 +216,7 @@ jobs:
       - name: podman manifest push latest (alpine edition)
         run: |
           podman manifest push miniserve-alpine docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:alpine
-          podman manifest push miniserve-alpine ghcr.io//miniserve-with-search:alpine
+          podman manifest push miniserve-alpine ghcr.io/${{ github.repository_owner }}/miniserve-with-search:alpine
 
       - name: podman manifest push tag version (alpine edition)
         run: |
