@@ -1,6 +1,8 @@
 #![allow(clippy::format_push_string)]
+use std::convert::Infallible;
 use std::io;
 use std::path::{Component, Path};
+use std::str::FromStr;
 use std::time::SystemTime;
 
 use actix_web::{
@@ -159,6 +161,41 @@ impl Breadcrumb {
     }
 }
 
+struct FileNameMatcher {
+    entry_type: Option<EntryType>,
+    keyword: String,
+}
+
+impl FileNameMatcher {
+    pub fn matches(&self, entry_type: EntryType, file_name: &str) -> bool {
+        if let Some(ref et) = self.entry_type
+            && *et != entry_type
+        {
+            return true;
+        }
+        file_name.contains(&self.keyword)
+    }
+}
+
+impl FromStr for FileNameMatcher {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut s = s.to_lowercase();
+        let (entry_type, keyword) = if s.starts_with("f:") {
+            (Some(EntryType::File), s.split_off(2))
+        } else if s.starts_with("d:") {
+            (Some(EntryType::Directory), s.split_off(2))
+        } else {
+            (None, s)
+        };
+        Ok(Self {
+            entry_type,
+            keyword,
+        })
+    }
+}
+
 pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
     let path = &req
         .app_data::<web::Data<crate::MiniserveConfig>>()
@@ -249,13 +286,12 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
-    let search = query_params.search.as_ref().map(|s| s.to_lowercase());
-    let matches_search = move |filename: &str| -> bool {
-        match search {
-            Some(ref search) => filename.to_lowercase().contains(search),
-            None => true,
-        }
-    };
+    let search_matcher = query_params
+        .search
+        .as_deref()
+        .unwrap_or_default()
+        .parse::<FileNameMatcher>()
+        .unwrap();
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
     let readme_rx: Regex = Regex::new("^readme([.](md|txt))?$").unwrap();
@@ -289,7 +325,7 @@ pub fn directory_listing(
                 let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
-                    if !matches_search(&file_name) {
+                    if !search_matcher.matches(EntryType::Directory, &file_name) {
                         continue;
                     }
                     entries.push(Entry::new(
@@ -343,7 +379,7 @@ pub fn directory_listing(
                             },
                         ));
                     }
-                    if !matches_search(&file_name) {
+                    if !search_matcher.matches(EntryType::File, &file_name) {
                         continue;
                     }
                     entries.push(Entry::new(

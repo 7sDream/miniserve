@@ -6,6 +6,7 @@ use std::time::Duration;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::BROKEN_SYMLINK;
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use regex::Regex;
 use reqwest::StatusCode;
 use rstest::rstest;
@@ -47,24 +48,35 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
 #[case(FILES[0].to_uppercase().into())]
 #[case(DIRECTORIES[0].trim_end_matches("/").into())]
 #[case("test".into())]
-#[case("keyword-that-matches-no-file".into())]
+#[case("f:test".into())]
+#[case("d:test".into())]
+#[case("keyword-that-matches-nothing".into())]
 fn serves_requests_with_search_query(
     server: TestServer,
     #[case] search: Cow<'static, str>,
 ) -> Result<(), Error> {
-    let body = reqwest::blocking::get(format!("{}/?search={}", server.url(), search))?
-        .error_for_status()?;
+    let body = reqwest::blocking::get(format!(
+        "{}/?search={}",
+        server.url(),
+        utf8_percent_encode(&search, NON_ALPHANUMERIC),
+    ))?
+    .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let search_lower = search.to_lowercase();
+    let search_keywrod = search_lower
+        .trim_start_matches("f:")
+        .trim_start_matches("d:");
     for &file in FILES {
-        let should_exist = file.to_lowercase().contains(search_lower.as_str());
+        let should_exist =
+            search_lower.starts_with("d:") || file.to_lowercase().contains(search_keywrod);
         assert_eq!(
             parsed.find(|x: &Node| x.text() == file).next().is_some(),
             should_exist,
         );
     }
     for &dir in DIRECTORIES {
-        let should_exist = dir.to_lowercase().contains(search_lower.as_str());
+        let should_exist =
+            search_lower.starts_with("f:") || dir.to_lowercase().contains(search_keywrod);
         assert_eq!(
             parsed.find(|x: &Node| x.text() == dir).next().is_some(),
             should_exist,
