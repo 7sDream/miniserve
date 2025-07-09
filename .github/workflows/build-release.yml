@@ -181,7 +181,7 @@ jobs:
 
       - name: podman login docker.io
         run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" podman login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin docker.io
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | podman login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin docker.io
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login --username ${{ github.repository_owner }} --password-stdin ghcr.io
 
       - name: podman build linux/arm64
