@@ -173,7 +173,7 @@ impl FileNameMatcher {
         {
             return true;
         }
-        file_name.contains(&self.keyword)
+        file_name.to_lowercase().contains(&self.keyword)
     }
 }
 
