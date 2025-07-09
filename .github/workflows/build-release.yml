@@ -181,8 +181,8 @@ jobs:
 
       - name: podman login docker.io
         run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | podman login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin docker.io
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login --username ${{ github.repository_owner }} --password-stdin ghcr.io
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | podman login --username 7sdream --password-stdin docker.io
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login --username 7sdream --password-stdin ghcr.io
 
       - name: podman build linux/arm64
         run: podman build --format docker --platform linux/arm64/v8 --manifest miniserve -f Containerfile target/aarch64-unknown-linux-gnu/release
@@ -195,13 +195,13 @@ jobs:
 
       - name: podman manifest push latest to docker.io
         run: |
-          podman manifest push miniserve docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:latest
-          podman manifest push miniserve ghcr.io/${{ github.repository_owner }}/miniserve-with-search:latest
+          podman manifest push miniserve docker.io/7sdream/miniserve-with-search:latest
+          podman manifest push miniserve ghcr.io/7sdream/miniserve-with-search:latest
 
       - name: podman manifest push tag version to docker.io
         run: |
-          podman manifest push miniserve docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:${{ needs.publish.outputs.version }}
-          podman manifest push miniserve ghcr.io/${{ github.repository_owner }}/miniserve-with-search:${{ needs.publish.outputs.version }}
+          podman manifest push miniserve docker.io/7sdream/miniserve-with-search:${{ needs.publish.outputs.version }}
+          podman manifest push miniserve ghcr.io/7sdream/miniserve-with-search:${{ needs.publish.outputs.version }}
         if: startsWith(github.ref_name, 'v')
 
       - name: podman build linux/arm64 (alpine edition)
@@ -215,11 +215,11 @@ jobs:
 
       - name: podman manifest push latest (alpine edition)
         run: |
-          podman manifest push miniserve-alpine docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:alpine
-          podman manifest push miniserve-alpine ghcr.io/${{ github.repository_owner }}/miniserve-with-search:alpine
+          podman manifest push miniserve-alpine docker.io/7sdream/miniserve-with-search:alpine
+          podman manifest push miniserve-alpine ghcr.io/7sdream/miniserve-with-search:alpine
 
       - name: podman manifest push tag version (alpine edition)
         run: |
-          podman manifest push miniserve-alpine docker.io/${{ secrets.DOCKERHUB_USERNAME }}/miniserve-with-search:${{ needs.publish.outputs.version }}-alpine
-          podman manifest push miniserve-alpine ghcr.io/${{ github.repository_owner }}/miniserve-with-search:${{ needs.publish.outputs.version }}-alpine
+          podman manifest push miniserve-alpine docker.io/7sdream/miniserve-with-search:${{ needs.publish.outputs.version }}-alpine
+          podman manifest push miniserve-alpine ghcr.io/7sdream/miniserve-with-search:${{ needs.publish.outputs.version }}-alpine
         if: startsWith(github.ref_name, 'v')
